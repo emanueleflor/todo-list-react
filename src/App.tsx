@@ -1,35 +1,112 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import './App.module.css'
+import { Button } from './components/Button'
+import { Header} from './components/Header'
+import { Input } from './components/Input'
+import { Item } from './components/List/Item';
+import styles from './App.module.css'
+import { PlusCircle } from '@phosphor-icons/react';
+import {Header as ListHeader} from './components/List/Header'
+import { Empty } from './components/List/Empty'
 
-function App() {
-  const [count, setCount] = useState(0)
+export interface ITask { 
+  id: number;
+  text: string;
+  isChecked: boolean;
 
+}
+
+export function App() {
+  const [tasks, setTasks] = useState<ITask[]>([])
+  const [inputValue, setInputValue] = useState('')
+
+  const checkedTaskCounter = tasks.reduce((prevValue, currentTask)=> {
+    if(currentTask.isChecked) {
+      return prevValue + 1
+    }
+    return prevValue
+  }, 0)
+
+  function handleAddTask() {
+    if(!inputValue) {
+      return
+    }
+
+    const newTask: ITask = {
+      id: new Date().getTime(),
+      text: inputValue,
+      isChecked: false,
+    }
+
+    setTasks((state)=>[...state, newTask])
+    setInputValue('')
+  }
+
+  function handleRemoveTask(id: number) {
+    const filteredTasks = tasks.filter(task => task.id !== id)
+
+    if(!confirm('Tem certeza que deseja remover a tarefa?')) {
+      return
+    }
+
+    setTasks(filteredTasks)
+  }
+
+  function handleToggleTask({ id, value }: {id: number, value: boolean}) {
+    const updatedTasks = tasks.map(task => {
+      if(task.id === id) {
+        return {
+          ...task,
+          isChecked: value,
+        }
+      }
+
+      return { ...task }
+    })
+
+    setTasks(updatedTasks)
+  
+  }
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+      <main>
+        <Header />
+
+        <section className={styles.content}>
+          <div className={styles.taskInfoContainer}>
+            <Input 
+              onChange={(e) => setInputValue(e.target.value)}
+              value={inputValue}
+            />
+            <Button onClick={handleAddTask}>
+              Criar
+              <PlusCircle size={16} color='#f2f2f2' weight='bold'/>
+            </Button>
+          </div>
+
+          <div className={styles.tasksList}>
+            <ListHeader 
+              tasksCounter={tasks.length}
+              checkedTaskCounter={checkedTaskCounter}
+            />
+
+            {tasks.length > 0 ? (
+              <div>
+                {tasks.map((task)=> (
+                  <Item 
+                    key={task.id}
+                    data={task}
+                    removeTask={handleRemoveTask}
+                    toggleTaskStatus={handleToggleTask}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Empty />
+            )}
+          </div>
+        </section>
+      </main>
   )
 }
 
-export default App
+
